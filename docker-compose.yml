@@ -1,0 +1,148 @@
+# ITRI623 Banking Microservices — Step 6a compose file.
+# Adds Consul (service registry). Each service registers itself with Consul; the gateway
+# discovers services through Consul instead of using hard-coded addresses.
+# Clients only ever talk to the gateway (port 5050). Consul UI is at http://localhost:8500.
+
+# Shared JWT settings. The Auth Service SIGNS tokens with this key; the Account Service
+# VERIFIES them with the same key. Both must match exactly, so they live in one place here.
+x-jwt-settings: &jwt-settings
+  Jwt__Key: "ThisIsA_Very_Long_Dev_Signing_Key_ChangeMe_1234567890"
+  Jwt__Issuer: "BankingAuth"
+  Jwt__Audience: "BankingClients"
+
+services:
+
+  # --- Consul (service registry / discovery) ---
+  consul:
+    image: hashicorp/consul:1.19
+    command: "agent -dev -client=0.0.0.0 -ui"
+    ports:
+      - "8500:8500"          # Consul web UI + API at http://localhost:8500
+
+  # --- API Gateway (Ocelot) — the single entry point for all clients ---
+  api-gateway:
+    build: ./ApiGateway
+    depends_on:
+      - consul
+      - account-service
+      - auth-service
+      - transaction-service
+    environment:
+      ASPNETCORE_URLS: "http://+:8080"
+    ports:
+      - "5050:8080"          # clients call http://localhost:5050 (5000 is taken by macOS AirPlay Receiver)
+
+  # --- Account Service's private database ---
+  account-db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: accountdb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - account-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # --- Account Service (ASP.NET Core Web API) — verifies JWTs ---
+  account-service:
+    build: ./AccountService
+    depends_on:
+      account-db:
+        condition: service_healthy
+      consul:
+        condition: service_started
+    environment:
+      <<: *jwt-settings
+      ASPNETCORE_URLS: "http://+:8080"
+      ConnectionStrings__AccountDb: "Host=account-db;Port=5432;Database=accountdb;Username=postgres;Password=postgres"
+      Consul__Address: "http://consul:8500"
+      Consul__ServiceName: "account-service"
+      Consul__ServiceHost: "account-service"
+      Consul__ServicePort: "8080"
+    ports:
+      - "5001:8080"          # still exposed directly, handy for comparing gateway vs direct
+
+  # --- Auth Service's private database ---
+  auth-db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: authdb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5433:5432"          # host port 5433 so it doesn't clash with account-db's 5432
+    volumes:
+      - auth-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # --- Auth Service (ASP.NET Core Web API) — issues JWTs on login ---
+  auth-service:
+    build: ./AuthService
+    depends_on:
+      auth-db:
+        condition: service_healthy
+      consul:
+        condition: service_started
+    environment:
+      <<: *jwt-settings
+      ASPNETCORE_URLS: "http://+:8080"
+      ConnectionStrings__AuthDb: "Host=auth-db;Port=5432;Database=authdb;Username=postgres;Password=postgres"
+      Consul__Address: "http://consul:8500"
+      Consul__ServiceName: "auth-service"
+      Consul__ServiceHost: "auth-service"
+      Consul__ServicePort: "8080"
+    ports:
+      - "5002:8080"          # exposed directly for testing
+
+  # --- Transaction Service's private database ---
+  transaction-db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: transactiondb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5434:5432"          # host port 5434 to avoid clashing with the other DBs
+    volumes:
+      - transaction-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # --- Transaction Service (ASP.NET Core Web API) — calls the Account Service to move money ---
+  transaction-service:
+    build: ./TransactionService
+    depends_on:
+      transaction-db:
+        condition: service_healthy
+      consul:
+        condition: service_started
+    environment:
+      <<: *jwt-settings
+      ASPNETCORE_URLS: "http://+:8080"
+      ConnectionStrings__TransactionDb: "Host=transaction-db;Port=5432;Database=transactiondb;Username=postgres;Password=postgres"
+      # Where to find the Account Service for the inter-service call (Docker network name).
+      Services__AccountService: "http://account-service:8080"
+      Consul__Address: "http://consul:8500"
+      Consul__ServiceName: "transaction-service"
+      Consul__ServiceHost: "transaction-service"
+      Consul__ServicePort: "8080"
+    ports:
+      - "5003:8080"          # exposed directly for testing
+
+volumes:
+  account-db-data:
+  auth-db-data:
+  transaction-db-data:

@@ -1,0 +1,23 @@
+# --- .NET build output ---
+bin/
+obj/
+[Bb]in/
+[Oo]bj/
+*.user
+
+# --- IDEs ---
+.vs/
+.vscode/
+.idea/
+*.suo
+*.userprefs
+
+# --- macOS ---
+.DS_Store
+
+# --- Rider ---
+*.sln.iml
+
+# NOTE: For a real production app you would NOT commit the JWT signing key or
+# database passwords. They live in appsettings.json / docker-compose.yml here
+# only because this is a self-contained student project meant to run with one command.
