@@ -1,85 +1,63 @@
 {
   "Routes": [
     {
-      "//": "Accounts collection — now routed by SERVICE NAME, looked up in Consul",
       "DownstreamPathTemplate": "/api/accounts",
       "DownstreamScheme": "http",
-      "ServiceName": "account-service",
-      "LoadBalancerOptions": { "Type": "LeastConnection" },
+      "DownstreamHostAndPorts": [ { "Host": "account-service", "Port": 8080 } ],
       "UpstreamPathTemplate": "/api/accounts",
       "UpstreamHttpMethod": [ "GET", "POST" ]
     },
     {
-      "//": "One account by id",
       "DownstreamPathTemplate": "/api/accounts/{id}",
       "DownstreamScheme": "http",
-      "ServiceName": "account-service",
-      "LoadBalancerOptions": { "Type": "LeastConnection" },
+      "DownstreamHostAndPorts": [ { "Host": "account-service", "Port": 8080 } ],
       "UpstreamPathTemplate": "/api/accounts/{id}",
       "UpstreamHttpMethod": [ "GET", "PUT", "DELETE" ]
     },
     {
-      "//": "Account Service health check, surfaced through the gateway",
       "DownstreamPathTemplate": "/health",
       "DownstreamScheme": "http",
-      "ServiceName": "account-service",
-      "LoadBalancerOptions": { "Type": "LeastConnection" },
+      "DownstreamHostAndPorts": [ { "Host": "account-service", "Port": 8080 } ],
       "UpstreamPathTemplate": "/health/accounts",
       "UpstreamHttpMethod": [ "GET" ]
     },
     {
-      "//": "Auth Service: login and any auth routes",
       "DownstreamPathTemplate": "/api/auth/{everything}",
       "DownstreamScheme": "http",
-      "ServiceName": "auth-service",
-      "LoadBalancerOptions": { "Type": "LeastConnection" },
+      "DownstreamHostAndPorts": [ { "Host": "auth-service", "Port": 8080 } ],
       "UpstreamPathTemplate": "/api/auth/{everything}",
       "UpstreamHttpMethod": [ "POST", "GET" ]
     },
     {
-      "//": "Auth Service: customers collection",
       "DownstreamPathTemplate": "/api/customers",
       "DownstreamScheme": "http",
-      "ServiceName": "auth-service",
-      "LoadBalancerOptions": { "Type": "LeastConnection" },
+      "DownstreamHostAndPorts": [ { "Host": "auth-service", "Port": 8080 } ],
       "UpstreamPathTemplate": "/api/customers",
       "UpstreamHttpMethod": [ "GET", "POST" ]
     },
     {
-      "//": "Auth Service: one customer by id",
       "DownstreamPathTemplate": "/api/customers/{id}",
       "DownstreamScheme": "http",
-      "ServiceName": "auth-service",
-      "LoadBalancerOptions": { "Type": "LeastConnection" },
+      "DownstreamHostAndPorts": [ { "Host": "auth-service", "Port": 8080 } ],
       "UpstreamPathTemplate": "/api/customers/{id}",
       "UpstreamHttpMethod": [ "GET" ]
     },
     {
-      "//": "Transaction Service: transfers collection",
       "DownstreamPathTemplate": "/api/transactions",
       "DownstreamScheme": "http",
-      "ServiceName": "transaction-service",
-      "LoadBalancerOptions": { "Type": "LeastConnection" },
+      "DownstreamHostAndPorts": [ { "Host": "transaction-service", "Port": 8080 } ],
       "UpstreamPathTemplate": "/api/transactions",
       "UpstreamHttpMethod": [ "GET", "POST" ]
     },
     {
-      "//": "Transaction Service: one transaction by id",
       "DownstreamPathTemplate": "/api/transactions/{id}",
       "DownstreamScheme": "http",
-      "ServiceName": "transaction-service",
-      "LoadBalancerOptions": { "Type": "LeastConnection" },
+      "DownstreamHostAndPorts": [ { "Host": "transaction-service", "Port": 8080 } ],
       "UpstreamPathTemplate": "/api/transactions/{id}",
       "UpstreamHttpMethod": [ "GET" ]
     }
   ],
   "GlobalConfiguration": {
-    "BaseUrl": "http://localhost:5050",
-    "ServiceDiscoveryProvider": {
-      "Scheme": "http",
-      "Host": "consul",
-      "Port": 8500,
-      "Type": "Consul"
-    }
+    "BaseUrl": "http://localhost:5050"
   }
 }
