@@ -17,7 +17,19 @@ builder.Host.UseSerilog((context, config) =>
 builder.Configuration.AddJsonFile("ocelot.json", optional: false, reloadOnChange: true);
 builder.Services.AddOcelot(builder.Configuration).AddConsul();
 
+// Allow the browser-based frontend to call the gateway (CORS).
+// The frontend runs on a different origin (http://localhost:8090), so the gateway
+// must send CORS headers. Auth is via bearer token, so allowing any origin is fine here.
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policy =>
+        policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod());
+});
+
 var app = builder.Build();
+
+// CORS must run before Ocelot takes over the pipeline.
+app.UseCors();
 
 app.UseSerilogRequestLogging();
 

@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>New Money Bank</title>
+<style>
+  :root {
+    --teal: #009999;
+    --teal-dark: #007a7a;
+    --orange: #FF6600;
+    --orange-dark: #e65c00;
+    --black: #000000;
+    --white: #FFFFFF;
+    --grey-bg: #f4f6f6;
+    --grey-line: #e2e8e8;
+    --grey-text: #5a6767;
+    --danger: #c0392b;
+    --success: #009999;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: "Segoe UI", system-ui, -apple-system, Arial, sans-serif;
+    background: var(--grey-bg);
+    color: var(--black);
+    min-height: 100vh;
+  }
+
+  /* ---------- Top bar ---------- */
+  header {
+    background: var(--teal);
+    color: var(--white);
+    padding: 0 24px;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+  }
+  .brand { display: flex; align-items: center; gap: 12px; font-size: 22px; font-weight: 700; letter-spacing: .3px; }
+  .brand .mark {
+    width: 34px; height: 34px; border-radius: 8px;
+    background: var(--orange); color: var(--white);
+    display: grid; place-items: center; font-weight: 800; font-size: 20px;
+  }
+  .brand small { font-weight: 400; font-size: 12px; opacity: .85; display: block; letter-spacing: 2px; }
+  .user-chip { display: none; align-items: center; gap: 12px; font-size: 14px; }
+  .user-chip .role { background: rgba(255,255,255,.18); padding: 3px 10px; border-radius: 20px; font-size: 12px; }
+  .btn-logout {
+    background: transparent; border: 1px solid rgba(255,255,255,.5); color: var(--white);
+    padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 13px;
+  }
+  .btn-logout:hover { background: rgba(255,255,255,.12); }
+
+  /* ---------- Buttons ---------- */
+  .btn {
+    background: var(--orange); color: var(--white); border: none;
+    padding: 12px 20px; border-radius: 8px; font-size: 15px; font-weight: 600;
+    cursor: pointer; transition: background .15s;
+  }
+  .btn:hover { background: var(--orange-dark); }
+  .btn:disabled { opacity: .6; cursor: not-allowed; }
+  .btn-block { width: 100%; }
+
+  /* ---------- Login ---------- */
+  .login-wrap { min-height: calc(100vh - 64px); display: grid; place-items: center; padding: 24px; }
+  .card {
+    background: var(--white); border-radius: 14px; padding: 32px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.08); border: 1px solid var(--grey-line);
+  }
+  .login-card { width: 100%; max-width: 400px; }
+  .login-card h1 { font-size: 24px; margin-bottom: 4px; color: var(--teal); }
+  .login-card p.sub { color: var(--grey-text); margin-bottom: 24px; font-size: 14px; }
+  label { display: block; font-size: 13px; font-weight: 600; margin: 14px 0 6px; color: var(--grey-text); }
+  input, select {
+    width: 100%; padding: 12px 14px; border: 1px solid var(--grey-line);
+    border-radius: 8px; font-size: 15px; background: var(--white); color: var(--black);
+  }
+  input:focus, select:focus { outline: 2px solid var(--teal); border-color: var(--teal); }
+  .hint { font-size: 12px; color: var(--grey-text); margin-top: 18px; text-align: center; line-height: 1.6; }
+  .hint code { background: var(--grey-bg); padding: 1px 6px; border-radius: 4px; }
+
+  /* ---------- App layout ---------- */
+  main { max-width: 1000px; margin: 0 auto; padding: 28px 24px 60px; display: none; }
+  .section-title { font-size: 15px; text-transform: uppercase; letter-spacing: 1px; color: var(--grey-text); margin: 28px 0 14px; }
+  .greet { font-size: 26px; margin-bottom: 4px; }
+  .greet span { color: var(--teal); }
+  .greet-sub { color: var(--grey-text); font-size: 14px; }
+
+  .accounts { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+  .acct-card {
+    background: linear-gradient(135deg, var(--teal), var(--teal-dark));
+    color: var(--white); border-radius: 14px; padding: 22px; position: relative; overflow: hidden;
+  }
+  .acct-card::after {
+    content: ""; position: absolute; right: -30px; bottom: -30px;
+    width: 120px; height: 120px; border-radius: 50%; background: rgba(255,255,255,.08);
+  }
+  .acct-card .type { font-size: 12px; text-transform: uppercase; letter-spacing: 1.5px; opacity: .85; }
+  .acct-card .num { font-size: 15px; letter-spacing: 2px; margin: 6px 0 18px; opacity: .95; }
+  .acct-card .bal-label { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; opacity: .8; }
+  .acct-card .bal { font-size: 30px; font-weight: 700; margin-top: 2px; }
+  .acct-card .owner { margin-top: 14px; font-size: 13px; opacity: .9; }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start; }
+  @media (max-width: 760px){ .grid-2 { grid-template-columns: 1fr; } }
+
+  .txn-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--grey-line); font-size: 14px; }
+  .txn-row:last-child { border-bottom: none; }
+  .txn-meta { color: var(--grey-text); font-size: 12px; }
+  .pill { font-size: 11px; padding: 3px 10px; border-radius: 20px; font-weight: 600; }
+  .pill.completed { background: #e0f5f5; color: var(--teal-dark); }
+  .pill.failed { background: #fdecea; color: var(--danger); }
+  .amount { font-weight: 700; }
+
+  .toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+    padding: 14px 22px; border-radius: 10px; color: var(--white); font-size: 14px;
+    box-shadow: 0 6px 20px rgba(0,0,0,.2); opacity: 0; transition: opacity .25s, bottom .25s; pointer-events: none;
+  }
+  .toast.show { opacity: 1; bottom: 34px; }
+  .toast.ok { background: var(--teal); }
+  .toast.err { background: var(--danger); }
+
+  .msg { font-size: 13px; margin-top: 12px; min-height: 18px; }
+  .msg.err { color: var(--danger); }
+  .empty { color: var(--grey-text); font-size: 14px; padding: 12px 0; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <span class="mark">N</span>
+    <div>Nova Bank<small>DIGITAL BANKING</small></div>
+  </div>
+  <div class="user-chip" id="userChip">
+    <span>Hi, <strong id="chipName"></strong></span>
+    <span class="role" id="chipRole"></span>
+    <button class="btn-logout" onclick="logout()">Sign out</button>
+  </div>
+</header>
+
+<!-- LOGIN -->
+<div class="login-wrap" id="loginView">
+  <div class="card login-card">
+    <h1>Welcome back</h1>
+    <p class="sub">Sign in to your Nova Bank profile</p>
+    <label for="username">Username</label>
+    <input id="username" value="admin" autocomplete="username" />
+    <label for="password">Password</label>
+    <input id="password" type="password" value="admin123" autocomplete="current-password" />
+    <div class="msg err" id="loginMsg"></div>
+    <button class="btn btn-block" style="margin-top:18px" onclick="login()" id="loginBtn">Sign in</button>
+    <p class="hint">
+      Demo logins:<br>
+      <code>admin</code> / <code>admin123</code> (Admin) &nbsp;·&nbsp; <code>thabo</code> / <code>password123</code> (Customer)
+    </p>
+  </div>
+</div>
+
+<!-- APP -->
+<main id="appView">
+  <h2 class="greet">Good day, <span id="greetName"></span></h2>
+  <p class="greet-sub">Here is an overview of your accounts.</p>
+
+  <div class="section-title">Your accounts</div>
+  <div class="accounts" id="accounts"></div>
+
+  <div class="grid-2" style="margin-top: 8px;">
+    <div>
+      <div class="section-title">Make a transfer</div>
+      <div class="card">
+        <label for="fromAcc">From account</label>
+        <select id="fromAcc"></select>
+        <label for="toAcc">To account</label>
+        <select id="toAcc"></select>
+        <label for="amount">Amount (ZAR)</label>
+        <input id="amount" type="number" min="1" step="0.01" value="200" />
+        <label for="reference">Reference</label>
+        <input id="reference" value="Payment" />
+        <div class="msg" id="transferMsg"></div>
+        <button class="btn btn-block" style="margin-top:16px" onclick="transfer()" id="transferBtn">Send money</button>
+      </div>
+    </div>
+    <div>
+      <div class="section-title">Recent transactions</div>
+      <div class="card" id="txnList"></div>
+    </div>
+  </div>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  // The API Gateway — the ONLY endpoint the frontend talks to. It routes to all services.
+  const API = "http://localhost:5050";
+
+  let token = null;
+  let accounts = [];
+
+  const $ = (id) => document.getElementById(id);
+
+  function showToast(text, ok = true) {
+    const t = $("toast");
+    t.textContent = text;
+    t.className = "toast show " + (ok ? "ok" : "err");
+    setTimeout(() => { t.className = "toast " + (ok ? "ok" : "err"); }, 3200);
+  }
+
+  async function login() {
+    const btn = $("loginBtn");
+    $("loginMsg").textContent = "";
+    btn.disabled = true; btn.textContent = "Signing in…";
+    try {
+      const res = await fetch(API + "/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: $("username").value, password: $("password").value })
+      });
+      if (!res.ok) {
+        $("loginMsg").textContent = "Invalid username or password.";
+        return;
+      }
+      const data = await res.json();
+      token = data.token;
+      $("chipName").textContent = data.username;
+      $("greetName").textContent = data.username;
+      $("chipRole").textContent = data.role;
+      $("loginView").style.display = "none";
+      $("appView").style.display = "block";
+      $("userChip").style.display = "flex";
+      await loadAccounts();
+      await loadTransactions();
+    } catch (e) {
+      $("loginMsg").textContent = "Could not reach the bank. Is the gateway running on 5050?";
+    } finally {
+      btn.disabled = false; btn.textContent = "Sign in";
+    }
+  }
+
+  function logout() {
+    token = null; accounts = [];
+    $("appView").style.display = "none";
+    $("userChip").style.display = "none";
+    $("loginView").style.display = "grid";
+  }
+
+  function money(n) {
+    return "R " + Number(n).toLocaleString("en-ZA", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  async function loadAccounts() {
+    const res = await fetch(API + "/api/accounts");
+    accounts = await res.json();
+    $("accounts").innerHTML = accounts.map(a => `
+      <div class="acct-card">
+        <div class="type">${a.accountType} Account</div>
+        <div class="num">${a.accountNumber}</div>
+        <div class="bal-label">Available balance</div>
+        <div class="bal">${money(a.balance)}</div>
+        <div class="owner">${a.ownerName}</div>
+      </div>`).join("");
+
+    const opts = accounts.map(a => `<option value="${a.accountNumber}">${a.accountNumber} — ${a.ownerName} (${money(a.balance)})</option>`).join("");
+    $("fromAcc").innerHTML = opts;
+    $("toAcc").innerHTML = opts;
+    if (accounts.length > 1) $("toAcc").selectedIndex = 1;
+  }
+
+  async function loadTransactions() {
+    const res = await fetch(API + "/api/transactions");
+    const txns = await res.json();
+    if (!txns.length) { $("txnList").innerHTML = '<div class="empty">No transactions yet.</div>'; return; }
+    $("txnList").innerHTML = txns.slice(0, 8).map(t => `
+      <div class="txn-row">
+        <div>
+          <div>${t.fromAccountNumber} → ${t.toAccountNumber}</div>
+          <div class="txn-meta">${t.reference || "—"} · ${new Date(t.createdAt).toLocaleString("en-ZA")}</div>
+        </div>
+        <div style="text-align:right">
+          <div class="amount">${money(t.amount)}</div>
+          <span class="pill ${t.status === "Completed" ? "completed" : "failed"}">${t.status}</span>
+        </div>
+      </div>`).join("");
+  }
+
+  async function transfer() {
+    const btn = $("transferBtn");
+    const msg = $("transferMsg");
+    msg.className = "msg"; msg.textContent = "";
+    const from = $("fromAcc").value, to = $("toAcc").value;
+    if (from === to) { msg.className = "msg err"; msg.textContent = "Choose two different accounts."; return; }
+
+    btn.disabled = true; btn.textContent = "Sending…";
+    try {
+      const res = await fetch(API + "/api/transactions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": "Bearer " + token },
+        body: JSON.stringify({
+          fromAccountNumber: from,
+          toAccountNumber: to,
+          amount: parseFloat($("amount").value),
+          reference: $("reference").value
+        })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        showToast("Transfer completed", true);
+        await loadAccounts();
+        await loadTransactions();
+      } else if (res.status === 401) {
+        showToast("Session expired — please sign in again", false);
+        logout();
+      } else {
+        // 422 = the Account Service refused (e.g. insufficient funds)
+        const reason = data.failureReason || data.message || "Transfer failed";
+        msg.className = "msg err"; msg.textContent = reason;
+        showToast("Transfer failed", false);
+        await loadTransactions();
+      }
+    } catch (e) {
+      msg.className = "msg err"; msg.textContent = "Could not reach the bank.";
+    } finally {
+      btn.disabled = false; btn.textContent = "Send money";
+    }
+  }
+
+  // Allow Enter to submit the login form
+  $("password").addEventListener("keydown", (e) => { if (e.key === "Enter") login(); });
+</script>
+</body>
+</html>

@@ -12,6 +12,14 @@ x-jwt-settings: &jwt-settings
 
 services:
 
+  # --- Frontend (static banking website served by nginx) ---
+  frontend:
+    build: ./frontend
+    depends_on:
+      - api-gateway
+    ports:
+      - "8090:80"            # open the bank at http://localhost:8090
+
   # --- Consul (service registry / discovery) ---
   consul:
     image: hashicorp/consul:1.19
